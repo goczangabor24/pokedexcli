@@ -12,6 +12,13 @@ func main() {
 	for {
 		fmt.Printf("Pokedex > ")
 		scanner.Scan()
-		fmt.Printf("Your command was: %v\n", cleanInput(scanner.Text())[0])
+		command := cleanInput(scanner.Text())[0]
+
+		c, ok := commands[command]
+		if !ok {
+			fmt.Println("Unknown value")
+			continue
+		}
+		c.callback()
 	}
 }
