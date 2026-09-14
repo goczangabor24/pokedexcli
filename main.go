@@ -14,12 +14,12 @@ func main() {
 				callback:    commandHelp,
 			},
 			"map": {
-				name:        "pokemap",
+				name:        "map",
 				description: "Displays the names of 20 location areas in the Pokemon world, goes to the next 20 on each consecutive call",
 				callback:    commandMap,
 			},
 			"mapb": {
-				name:        "pokemapb",
+				name:        "mapb",
 				description: "Goes back to the previous 20 location areas in the Pokemon world",
 				callback:    commandMapb,
 			},
