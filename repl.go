@@ -4,9 +4,12 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
+
+	"github.com/goczangabor24/pokedexcli/internal/pokecache"
 )
 
 func cleanInput(text string) []string {
@@ -26,6 +29,7 @@ type config struct {
 	commands map[string]cliCommand
 	next     string
 	previous string
+	cache    *pokecache.Cache
 }
 
 type locationAreaResponse struct {
@@ -39,20 +43,22 @@ type locationAreaResponse struct {
 }
 
 func commandExit(cfg *config) error {
-	fmt.Println("\n")
+	fmt.Println()
 	fmt.Println("Closing the Pokedex... Goodbye!")
+	fmt.Println()
 	os.Exit(0)
 	return nil
 }
 
 func commandHelp(cfg *config) error {
-	fmt.Println("\n")
-	fmt.Println("Welcome to the Pokedex!\nUsage:\n")
+	fmt.Println()
+	fmt.Println("Welcome to the Pokedex!\nUsage: ")
+	fmt.Println()
 
 	for _, command := range cfg.commands {
 		fmt.Printf("%v: %v\n", command.name, command.description)
 	}
-	fmt.Println("\n")
+	fmt.Println()
 
 	return nil
 }
@@ -64,22 +70,36 @@ func commandMap(cfg *config) error {
 		url = cfg.next
 	}
 
-	res, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
-
 	var locations locationAreaResponse
-	if err := json.NewDecoder(res.Body).Decode(&locations); err != nil {
-		return err
+
+	cachedRes, ok := cfg.cache.Get(url)
+	if ok {
+		if err := json.Unmarshal(cachedRes, &locations); err != nil {
+			return err
+		}
+	} else {
+		res, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		if err := json.Unmarshal(data, &locations); err != nil {
+			return err
+		}
+		cfg.cache.Add(url, data)
 	}
-	fmt.Println("\n")
+
+	fmt.Println()
 	for _, area := range locations.Results {
 		fmt.Println(area.Name)
 	}
-	fmt.Println("\n")
+	fmt.Println()
 
 	if locations.Next != nil {
 		cfg.next = *locations.Next
@@ -97,31 +117,43 @@ func commandMap(cfg *config) error {
 }
 
 func commandMapb(cfg *config) error {
-	url := ""
-
 	if cfg.previous == "" {
 		fmt.Println("You're on the first page")
 		return nil
-	} else if cfg.previous != "" {
-		url = cfg.previous
 	}
 
-	res, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	defer res.Body.Close()
+	url := cfg.previous
 
 	var locations locationAreaResponse
-	if err := json.NewDecoder(res.Body).Decode(&locations); err != nil {
-		return err
+
+	cachedRes, ok := cfg.cache.Get(url)
+	if ok {
+		if err := json.Unmarshal(cachedRes, &locations); err != nil {
+			return err
+		}
+	} else {
+		res, err := http.Get(url)
+		if err != nil {
+			return err
+		}
+		defer res.Body.Close()
+
+		data, err := io.ReadAll(res.Body)
+		if err != nil {
+			return err
+		}
+
+		if err := json.Unmarshal(data, &locations); err != nil {
+			return err
+		}
+		cfg.cache.Add(url, data)
 	}
-	fmt.Println("\n")
+
+	fmt.Println()
 	for _, area := range locations.Results {
 		fmt.Println(area.Name)
 	}
-	fmt.Println("\n")
+	fmt.Println()
 
 	if locations.Next != nil {
 		cfg.next = *locations.Next

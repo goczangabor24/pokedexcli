@@ -1,7 +1,15 @@
 package main
 
+import (
+	"time"
+
+	"github.com/goczangabor24/pokedexcli/internal/pokecache"
+)
+
 func main() {
 	cfg := &config{
+		cache: pokecache.NewCache(5 * time.Minute),
+
 		commands: map[string]cliCommand{
 			"exit": {
 				name:        "exit",
