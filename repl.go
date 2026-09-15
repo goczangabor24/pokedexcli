@@ -55,13 +55,21 @@ type locationAreaDetailResponse struct {
 }
 
 type pokemonDetails struct {
-	ID             int    `json:"id"`
 	Name           string `json:"name"`
 	BaseExperience int    `json:"base_experience"`
 	Height         int    `json:"height"`
-	IsDefault      bool   `json:"is_default"`
-	Order          int    `json:"order"`
 	Weight         int    `json:"weight"`
+	Stats          []struct {
+		BaseStat int `json:"base_stat"`
+		Stat     struct {
+			Name string `json:"name"`
+		} `json:"stat"`
+	} `json:"stats"`
+	Types []struct {
+		Type struct {
+			Name string `json:"name"`
+		} `json:"type"`
+	} `json:"types"`
 }
 
 func commandExit(cfg *config, args ...string) error {
@@ -77,7 +85,7 @@ func commandHelp(cfg *config, args ...string) error {
 	fmt.Println()
 
 	for _, command := range cfg.commands {
-		fmt.Printf("%v: %v\n", command.name, command.description)
+		fmt.Printf("- %v: %v\n\n", command.name, command.description)
 	}
 	fmt.Println()
 
@@ -238,7 +246,7 @@ func commandExplore(cfg *config, args ...string) error {
 	return nil
 }
 
-func commandInspect(cfg *config, args ...string) error {
+func commandPokedex(cfg *config, args ...string) error {
 	fmt.Println()
 	if len(cfg.pokedex) == 0 {
 		fmt.Println("Your pokedex is empty, start catchin' em all!")
@@ -248,6 +256,37 @@ func commandInspect(cfg *config, args ...string) error {
 		fmt.Println(pokemon)
 	}
 	fmt.Println()
+	return nil
+}
+
+func commandInspect(cfg *config, args ...string) error {
+	if len(args) == 0 {
+		fmt.Println()
+		return fmt.Errorf("Please enter a Pokemon to inspect\n")
+	}
+
+	fmt.Println()
+	if _, ok := cfg.pokedex[args[0]]; ok {
+		pokemon := cfg.pokedex[args[0]]
+
+		fmt.Printf("Name: %v\n", pokemon.Name)
+		fmt.Printf("Height: %v\n", pokemon.Height)
+		fmt.Printf("Weight: %v\n", pokemon.Weight)
+
+		fmt.Println("Stats: ")
+		for _, stat := range pokemon.Stats {
+			fmt.Printf(" - %v: %d\n", stat.Stat.Name, stat.BaseStat)
+		}
+
+		fmt.Println("Types: ")
+		for _, pokemonType := range pokemon.Types {
+			fmt.Printf(" - %v\n", pokemonType.Type.Name)
+		}
+
+		fmt.Println()
+	} else {
+		fmt.Println("You need to catch this Pokemon first!")
+	}
 	return nil
 }
 
@@ -320,6 +359,8 @@ func commandCatch(cfg *config, args ...string) error {
 }
 
 func startRepl(cfg *config) {
+	fmt.Println("Welcome to the Pokedex, type in the 'help' command to learn how to use it!\nHave fun!")
+
 	scanner := bufio.NewScanner(os.Stdin)
 
 	for {

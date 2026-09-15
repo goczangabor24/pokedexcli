@@ -42,9 +42,14 @@ func main() {
 				description: "Catch a Pokémon in the current area",
 				callback:    commandCatch,
 			},
+			"pokedex": {
+				name:        "pokedex",
+				description: "Display your Pokedex entries",
+				callback:    commandPokedex,
+			},
 			"inspect": {
 				name:        "inspect",
-				description: "Inspect your Pokedex",
+				description: "Inspect the details of a Pokemon you caught",
 				callback:    commandInspect,
 			},
 		},
