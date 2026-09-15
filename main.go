@@ -8,8 +8,9 @@ import (
 
 func main() {
 	cfg := &config{
-		cache: pokecache.NewCache(5 * time.Minute),
-
+		cache:          pokecache.NewCache(5 * time.Minute),
+		pokedex:        make(map[string]pokemonDetails),
+		currentPokemon: make(map[string]int),
 		commands: map[string]cliCommand{
 			"exit": {
 				name:        "exit",
@@ -18,18 +19,33 @@ func main() {
 			},
 			"help": {
 				name:        "help",
-				description: "Displays a help message",
+				description: "Display a help message",
 				callback:    commandHelp,
 			},
 			"map": {
 				name:        "map",
-				description: "Displays the names of 20 location areas in the Pokemon world, goes to the next 20 on each consecutive call",
+				description: "Display the names of 20 location areas in the Pokémon world, goes to the next 20 on each consecutive call",
 				callback:    commandMap,
 			},
 			"mapb": {
 				name:        "mapb",
-				description: "Goes back to the previous 20 location areas in the Pokemon world",
+				description: "Go back to the previous 20 location areas in the Pokémon world",
 				callback:    commandMapb,
+			},
+			"explore": {
+				name:        "explore",
+				description: "Explore a location area",
+				callback:    commandExplore,
+			},
+			"catch": {
+				name:        "catch",
+				description: "Catch a Pokémon in the current area",
+				callback:    commandCatch,
+			},
+			"inspect": {
+				name:        "inspect",
+				description: "Inspect your Pokedex",
+				callback:    commandInspect,
 			},
 		},
 	}
