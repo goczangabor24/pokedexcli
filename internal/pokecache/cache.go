@@ -6,8 +6,8 @@ import (
 )
 
 type Cache struct {
-	cache map[string]cacheEntry
-	mu    *sync.Mutex
+	cache map[string]cacheEntry //has state, needs a struct
+	mu    sync.Mutex            //map is not thread-safe, struct needs protection
 }
 
 type cacheEntry struct {
@@ -18,15 +18,15 @@ type cacheEntry struct {
 func NewCache(interval time.Duration) *Cache {
 	c := &Cache{
 		cache: make(map[string]cacheEntry),
-	}
+	} //creates a new cache
 
-	go c.reapLoop(interval)
+	go c.reapLoop(interval) //starts cleaning up the cache concurrently after interval
 
 	return c
 }
 
 func (c *Cache) Add(key string, val []byte) {
-	c.mu.Lock()
+	c.mu.Lock() //locks the map, so no other concurrent process can access it
 	defer c.mu.Unlock()
 
 	c.cache[key] = cacheEntry{
