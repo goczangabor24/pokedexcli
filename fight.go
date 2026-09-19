@@ -143,8 +143,8 @@ func fight(cfg *config, args ...string) error {
 
 	delete(cfg.pokemonToFight, p1)
 	playerHp = maxHealthp2
-	for _, stat := range cfg.pokemonStats[p2] {
-		stat += 1
+	for stat := range cfg.pokemonStats[p2] {
+		cfg.pokemonStats[p2][stat] += 1
 	}
 
 	return nil
