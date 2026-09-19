@@ -9,8 +9,11 @@ import (
 func main() {
 	cfg := &config{
 		cache:          pokecache.NewCache(5 * time.Minute),
-		pokedex:        make(map[string]pokemonDetails),
+		pokedex:        make(map[string]*pokemonDetails),
 		currentPokemon: make(map[string]int),
+		currentArea:    []string{},
+		pokemonStats:   make(map[string]map[string]int),
+		pokemonToFight: make(map[string]map[string]int),
 		commands: map[string]cliCommand{
 			"exit": {
 				name:        "exit",
@@ -51,6 +54,16 @@ func main() {
 				name:        "inspect",
 				description: "Inspect the details of a Pokemon you caught",
 				callback:    commandInspect,
+			},
+			"current": {
+				name:        "current",
+				description: "current area: Shows current areas; current pokemon: Shows current Pokemon",
+				callback:    commandCurrent,
+			},
+			"fight": {
+				name:        "fight",
+				description: "placeholder",
+				callback:    fight,
 			},
 		},
 	}

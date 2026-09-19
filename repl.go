@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -10,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/chzyer/readline"
 
 	"github.com/goczangabor24/pokedexcli/internal/pokecache"
 )
@@ -32,8 +33,11 @@ type config struct {
 	next           string
 	previous       string
 	cache          *pokecache.Cache
-	pokedex        map[string]pokemonDetails
+	pokedex        map[string]*pokemonDetails
 	currentPokemon map[string]int
+	currentArea    []string
+	pokemonStats   map[string]map[string]int
+	pokemonToFight map[string]map[string]int
 }
 
 type locationAreaResponse struct {
@@ -55,6 +59,7 @@ type locationAreaDetailResponse struct {
 }
 
 type pokemonDetails struct {
+	XP             int
 	Name           string `json:"name"`
 	BaseExperience int    `json:"base_experience"`
 	Height         int    `json:"height"`
@@ -92,6 +97,42 @@ func commandHelp(cfg *config, args ...string) error {
 	return nil
 }
 
+func commandCurrent(cfg *config, args ...string) error {
+	if len(args) == 0 {
+
+		fmt.Println("\nIf you'd like to see the current area type 'current area',\nif you'd like to see the current Pokemon type 'current pokemon'\n")
+
+	} else if args[0] == "area" {
+		if len(cfg.currentArea) == 0 {
+			fmt.Println("\nStart exploring the area with the 'map' command\n")
+			return nil
+		}
+
+		fmt.Println()
+
+		for _, area := range cfg.currentArea {
+			fmt.Println(area)
+		}
+		fmt.Println()
+		return nil
+
+	} else if args[0] == "pokemon" {
+		if len(cfg.currentArea) == 0 {
+			fmt.Println("\nExplore the pokemon in a given area with the 'explore' command\n")
+			return nil
+		}
+		fmt.Println()
+
+		for pokemon, _ := range cfg.currentPokemon {
+			fmt.Println(pokemon)
+		}
+
+		fmt.Println()
+		return nil
+	}
+	return nil
+}
+
 func commandMap(cfg *config, args ...string) error {
 	url := "https://pokeapi.co/api/v2/location-area/"
 
@@ -123,10 +164,12 @@ func commandMap(cfg *config, args ...string) error {
 		}
 		cfg.cache.Add(url, data)
 	}
+	cfg.currentArea = []string{}
 
 	fmt.Println()
 	for _, area := range locations.Results {
 		fmt.Println(area.Name)
+		cfg.currentArea = append(cfg.currentArea, area.Name)
 	}
 	fmt.Println()
 
@@ -269,6 +312,7 @@ func commandInspect(cfg *config, args ...string) error {
 	if _, ok := cfg.pokedex[args[0]]; ok {
 		pokemon := cfg.pokedex[args[0]]
 
+		fmt.Printf("XP: %v\n", pokemon.XP)
 		fmt.Printf("Name: %v\n", pokemon.Name)
 		fmt.Printf("Height: %v\n", pokemon.Height)
 		fmt.Printf("Weight: %v\n", pokemon.Weight)
@@ -284,6 +328,7 @@ func commandInspect(cfg *config, args ...string) error {
 		}
 
 		fmt.Println()
+		cfg.pokedex[args[0]].XP += 1
 	} else {
 		fmt.Println("You need to catch this Pokemon first!")
 	}
@@ -299,7 +344,7 @@ func commandCatch(cfg *config, args ...string) error {
 
 	url := "https://pokeapi.co/api/v2/pokemon/" + pokemonName
 
-	var pokemon pokemonDetails
+	var pokemon *pokemonDetails
 
 	cachedRes, ok := cfg.cache.Get(url)
 	if ok {
@@ -343,33 +388,53 @@ func commandCatch(cfg *config, args ...string) error {
 		fmt.Printf("Throwing Pokeball at %s ...\n", pokemon.Name)
 		time.Sleep(1 * time.Second)
 
-		const maxXP = 300
+		const maxXP = 500
 		chance := maxXP - pokemon.BaseExperience
 		roll := rand.Intn(maxXP)
 
 		if roll < chance {
 			fmt.Printf("%v caught\n", pokemon.Name)
 			cfg.pokedex[pokemon.Name] = pokemon
+			cfg.pokemonStats[pokemon.Name] = make(map[string]int)
+			for _, stat := range pokemon.Stats {
+				cfg.pokemonStats[pokemon.Name][stat.Stat.Name] = stat.BaseStat
+			}
+			cfg.pokemonStats[pokemon.Name]["Base Experience"] = pokemon.BaseExperience
 		} else {
 			fmt.Printf("%v escaped", pokemon.Name)
 		}
+		fmt.Println()
 	}
-	fmt.Println()
 	return nil
 }
 
 func startRepl(cfg *config) {
 	fmt.Println("Welcome to the Pokedex, type in the 'help' command to learn how to use it!\nHave fun!")
 
-	scanner := bufio.NewScanner(os.Stdin)
+	rl, err := readline.New("Pokedex > ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer rl.Close()
 
 	for {
-		fmt.Print("Pokedex > ")
+		input, err := rl.Readline()
 
-		if !scanner.Scan() {
+		if err == readline.ErrInterrupt {
+			continue
+		}
+
+		if err == io.EOF {
 			return
 		}
-		words := cleanInput(scanner.Text())
+
+		words := cleanInput(input)
+
+		if len(words) == 0 {
+			continue
+		}
+
 		command := words[0]
 		args := words[1:]
 
@@ -379,7 +444,7 @@ func startRepl(cfg *config) {
 			continue
 		}
 
-		err := c.callback(cfg, args...)
+		err = c.callback(cfg, args...)
 		if err != nil {
 			fmt.Println(err)
 		}
