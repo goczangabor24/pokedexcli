@@ -62,7 +62,7 @@ func main() {
 			},
 			"fight": {
 				name:        "fight",
-				description: "placeholder",
+				description: "After the 'fight' type a Pokemon from the area you wish to catch then type a second Pokemon from your Pokedex to fight it with",
 				callback:    fight,
 			},
 		},

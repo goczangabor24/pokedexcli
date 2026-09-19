@@ -388,7 +388,7 @@ func commandCatch(cfg *config, args ...string) error {
 		fmt.Printf("Throwing Pokeball at %s ...\n", pokemon.Name)
 		time.Sleep(1 * time.Second)
 
-		const maxXP = 500
+		const maxXP = 300
 		chance := maxXP - pokemon.BaseExperience
 		roll := rand.Intn(maxXP)
 

@@ -29,6 +29,12 @@ func fight(cfg *config, args ...string) error {
 		return nil
 	}
 
+	_, oke := cfg.pokedex[p1]
+	if oke {
+		fmt.Println("You've already caught this Pokemon")
+		return nil
+	}
+
 	if p1 == p2 {
 		fmt.Println("You've already caught this Pokemon")
 		return nil
@@ -67,10 +73,11 @@ func fight(cfg *config, args ...string) error {
 	}
 
 	enemyHp := cfg.pokemonToFight[p1]["hp"]
-	playerHp := cfg.pokemonStats[p2]["hp"]
 	enemyAttack := cfg.pokemonToFight[p1]["attack"]
-	playerAttack := cfg.pokemonStats[p2]["attack"]
 	enemyDefense := cfg.pokemonToFight[p1]["defense"]
+
+	playerHp := cfg.pokemonStats[p2]["hp"]
+	playerAttack := cfg.pokemonStats[p2]["attack"]
 	playerDefense := cfg.pokemonStats[p2]["defense"]
 
 	maxHealthp2 := cfg.pokemonStats[p2]["hp"]
@@ -94,15 +101,16 @@ func fight(cfg *config, args ...string) error {
 	for enemyHp > 0 && playerHp > 0 {
 
 		if enemyAttack < playerDefense && playerAttack < enemyDefense {
-			fmt.Println("Draw")
+			time.Sleep(1 * time.Second)
+			fmt.Println("\nLong fight, none of them seems to be able to defeat the other...")
+			time.Sleep(1 * time.Second)
+			fmt.Println("Draw\n")
 			return nil
 		}
 
 		if playerAttack-enemyDefense < 0 {
-			status()
 		} else {
 			enemyHp -= playerAttack - enemyDefense
-			status()
 			if enemyHp <= 0 {
 				break
 			}
@@ -121,6 +129,13 @@ func fight(cfg *config, args ...string) error {
 
 	if enemyHp <= 0 {
 		fmt.Println("Player won")
+		fmt.Printf("\n%v caught!", pokemon1.Name)
+		cfg.pokedex[pokemon1.Name] = pokemon1
+		cfg.pokemonStats[pokemon1.Name] = make(map[string]int)
+		for _, stat := range pokemon1.Stats {
+			cfg.pokemonStats[pokemon1.Name][stat.Stat.Name] = stat.BaseStat
+		}
+		cfg.pokemonStats[pokemon1.Name]["Base Experience"] = pokemon1.BaseExperience
 	} else {
 		fmt.Println("\nCPU won")
 	}
