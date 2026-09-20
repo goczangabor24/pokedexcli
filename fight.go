@@ -21,7 +21,11 @@ func fight(cfg *config, args ...string) error {
 		return nil
 	}
 
-	if cfg.cooldowns[playerName] {
+	cfg.cooldownsMu.Lock()
+	onCooldown := cfg.cooldowns[playerName]
+	cfg.cooldownsMu.Unlock()
+
+	if onCooldown {
 		fmt.Printf("\n%s is recovering and can't fight yet!\n", playerName)
 		return nil
 	}
@@ -193,12 +197,16 @@ func levelUpPokemon(cfg *config, pokemonName string) {
 }
 
 func startCooldown(cfg *config, pokemonName string) {
+	cfg.cooldownsMu.Lock()
 	cfg.cooldowns[pokemonName] = true
+	cfg.cooldownsMu.Unlock()
 
 	go func() {
-		time.Sleep(10 * time.Second)
+		time.Sleep(15 * time.Second)
 
+		cfg.cooldownsMu.Lock()
 		cfg.cooldowns[pokemonName] = false
+		cfg.cooldownsMu.Unlock()
 
 		fmt.Printf("\n%s has recovered and can fight again!\n", pokemonName)
 	}()

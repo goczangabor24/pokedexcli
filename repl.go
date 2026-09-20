@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/chzyer/readline"
@@ -39,6 +40,7 @@ type config struct {
 	pokemonStats   map[string]map[string]int
 	pokemonToFight map[string]map[string]int
 	cooldowns      map[string]bool
+	cooldownsMu    sync.Mutex
 }
 
 type locationAreaResponse struct {
