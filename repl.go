@@ -38,6 +38,7 @@ type config struct {
 	currentArea    []string
 	pokemonStats   map[string]map[string]int
 	pokemonToFight map[string]map[string]int
+	cooldowns      map[string]bool
 }
 
 type locationAreaResponse struct {
@@ -295,7 +296,7 @@ func commandPokedex(cfg *config, args ...string) error {
 		fmt.Println("Your pokedex is empty, start catchin' em all!")
 	}
 
-	for pokemon, _ := range cfg.pokedex {
+	for pokemon := range cfg.pokedex {
 		fmt.Println(pokemon)
 	}
 	fmt.Println()
@@ -393,12 +394,15 @@ func commandCatch(cfg *config, args ...string) error {
 		roll := rand.Intn(maxXP)
 
 		if roll < chance {
+
 			fmt.Printf("%v caught\n", pokemon.Name)
 			cfg.pokedex[pokemon.Name] = pokemon
 			cfg.pokemonStats[pokemon.Name] = make(map[string]int)
+
 			for _, stat := range pokemon.Stats {
 				cfg.pokemonStats[pokemon.Name][stat.Stat.Name] = stat.BaseStat
 			}
+
 			cfg.pokemonStats[pokemon.Name]["Base Experience"] = pokemon.BaseExperience
 		} else {
 			fmt.Printf("%v escaped", pokemon.Name)

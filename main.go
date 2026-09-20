@@ -14,6 +14,7 @@ func main() {
 		currentArea:    []string{},
 		pokemonStats:   make(map[string]map[string]int),
 		pokemonToFight: make(map[string]map[string]int),
+		cooldowns:      make(map[string]bool),
 		commands: map[string]cliCommand{
 			"exit": {
 				name:        "exit",

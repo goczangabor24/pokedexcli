@@ -21,6 +21,11 @@ func fight(cfg *config, args ...string) error {
 		return nil
 	}
 
+	if cfg.cooldowns[playerName] {
+		fmt.Printf("\n%s is recovering and can't fight yet!\n", playerName)
+		return nil
+	}
+
 	enemy, err := getPokemonForFight(cfg, enemyName)
 	if err != nil {
 		return err
@@ -32,10 +37,13 @@ func fight(cfg *config, args ...string) error {
 
 	if playerWon {
 		catchPokemonAfterFight(cfg, enemy)
-		levelUpPokemon(cfg, playerName)
 	}
 
+	levelUpPokemon(cfg, playerName)
+
 	delete(cfg.pokemonToFight, enemyName)
+
+	startCooldown(cfg, playerName)
 
 	return nil
 }
@@ -117,6 +125,7 @@ func runBattle(cfg *config, enemyName, playerName string) bool {
 		if playerDamage < 1 {
 			playerDamage = 1
 		}
+
 		enemyHp -= playerDamage
 		if enemyHp <= 0 {
 			printFightStatus(enemyHp, playerHp)
@@ -128,7 +137,9 @@ func runBattle(cfg *config, enemyName, playerName string) bool {
 		if enemyDamage < 1 {
 			enemyDamage = 1
 		}
+
 		playerHp -= enemyDamage
+
 		printFightStatus(enemyHp, playerHp)
 	}
 	fmt.Println("\nCPU won")
@@ -165,6 +176,7 @@ func catchPokemonAfterFight(cfg *config, pokemon *pokemonDetails) {
 }
 
 func levelUpPokemon(cfg *config, pokemonName string) {
+
 	for stat := range cfg.pokemonStats[pokemonName] {
 		if stat == "Base Experience" {
 			continue
@@ -172,4 +184,22 @@ func levelUpPokemon(cfg *config, pokemonName string) {
 
 		cfg.pokemonStats[pokemonName][stat]++
 	}
+
+	pokemon := cfg.pokedex[pokemonName]
+
+	for i := range pokemon.Stats {
+		pokemon.Stats[i].BaseStat++
+	}
+}
+
+func startCooldown(cfg *config, pokemonName string) {
+	cfg.cooldowns[pokemonName] = true
+
+	go func() {
+		time.Sleep(10 * time.Second)
+
+		cfg.cooldowns[pokemonName] = false
+
+		fmt.Printf("\n%s has recovered and can fight again!\n", pokemonName)
+	}()
 }
